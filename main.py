@@ -13,20 +13,25 @@ from google.cloud import translate_v2 as translate
 from google.oauth2.service_account import Credentials
 
 
+# 项目声明部分
 # todo: 应用名称、依赖等内容需要改为配置化并进行版本管理
+# 将需要的依赖在这里声明，modal 等 serverless 平台为你构建服务需要的运行环境镜像
 REQUIREMENTS = ["fastapi-poe==0.0.36", "PyPDF2==3.0.1", "requests==2.31.0", "langdetect",
                 "langchain-openai", "langchain","google-cloud-translate"]
 image = Image.debian_slim().pip_install(*REQUIREMENTS)
+# 这里是对 app 的命名， modal 上的监控面板通过该名称区分不同的API服务
 stub = Stub("filebot-poe2")
+# 声明需要使用的 volume 名称
 vol = Volume.from_name("my-volume")
 
-
+# utils 
 def generate_random_file_name():
     current_time = time.strftime("%Y%m%d")
     random_string = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
     file_name = f"{current_time}_{random_string}.txt"
     return file_name
 
+# 文件输入处理逻辑
 def process_plain_text_file(url: str):
     response = requests.get(url)
     if response.status_code != 200:
@@ -41,7 +46,8 @@ def process_plain_text_file(url: str):
 def process_pdf_file(url: str):
     return "to be implemented"
 
-
+# 文本输入处理逻辑
+# 调用 llm 对于法语句子产生特定的处理
 french_process_prompt = """
 请使用中文逐字逐词给我讲解下面的法语内容，如果有重要的语法点或惯用语也请说明，最后仿造两个类似的法语句子。{french_sentence}"""
 
@@ -55,13 +61,15 @@ def french_sentence_process(raw: str):
     response = chain.invoke({"input":french_process_prompt.format(french_sentence=raw)})
     return response.content
 
+# 调用 google translate 对于英文句子产生特定的处理
 def sentence_translate_process(raw: str):
     service_account_info = json.loads(os.environ["SERVICE_ACCOUNT_JSON"])
     credentials = Credentials.from_service_account_info(service_account_info)
     translate_client = translate.Client(credentials=credentials)
     translation = translate_client.translate(raw, target_language="zh-CN")
     return translation["translatedText"]
-    
+
+
 class MyBot(fp.PoeBot):
     async def get_response(
         self, request: fp.QueryRequest
@@ -93,7 +101,7 @@ class MyBot(fp.PoeBot):
     async def get_settings(self, setting: fp.SettingsRequest) -> fp.SettingsResponse:
         return fp.SettingsResponse(allow_attachments=True)
 
-
+# 全局注入业务需要使用的 secrets，这里 secret 的名称就是你在 modal 等 serverless 平台上注册的 secret 名称
 @stub.function(secrets=[modal.Secret.from_name("my-googlecloud-secret"),modal.Secret.from_name("my-openai-secret")],
                image=image,volumes={"/data": vol})
 @asgi_app()
