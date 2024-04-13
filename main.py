@@ -16,7 +16,7 @@ from google.oauth2.service_account import Credentials
 # todo: 应用名称、依赖等内容需要改为配置化并进行版本管理
 # 将需要的依赖在这里声明，modal 等 serverless 平台为你构建服务需要的运行环境镜像
 REQUIREMENTS = ["fastapi-poe==0.0.36", "PyPDF2==3.0.1", "requests==2.31.0", "langdetect",
-                "langchain-openai", "langchain","google-cloud-translate"]
+                "langchain-openai", "langchain","google-cloud-translate", "google-cloud-vision", "google-cloud-speech"]
 image = Image.debian_slim().pip_install(*REQUIREMENTS)
 # 这里是对 app 的命名， modal 上的监控面板通过该名称区分不同的API服务
 stub = Stub("filebot-poe2")

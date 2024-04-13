@@ -1,0 +1,9 @@
+fastapi-poe==0.0.36
+PyPDF2==3.0.1
+requests==2.31.0
+langdetect
+langchain-openai
+langchain
+google-cloud-translate
+google-cloud-vision
+google-cloud-speech
