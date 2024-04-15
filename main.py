@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import AsyncIterable
 import requests, time, random, string, os, json
+import uvicorn
 
 import fastapi_poe as fp
 import modal
@@ -13,7 +14,9 @@ from google.oauth2.service_account import Credentials
 from llm_service import normal_prompt_process
 from llm_prompts import french_process_prompt
 from utils import requirements_to_list
-from firestore_logging import add_data, echo_log_data
+from firestore_logging import FirestoreLogger, echo_log_data
+
+logger = FirestoreLogger()
 
 # 项目声明部分
 # todo: 应用名称、依赖等内容需要改为配置化并进行版本管理
@@ -63,7 +66,7 @@ def sentence_translate_process(text: str, sa_json: str = GOOGLE_SERVICE_ACCOUNT_
     return translation["translatedText"]
 
 async def echo_response(message_id: str, text: str):
-    await add_data(message_id, text, echo_log_data)
+    await logger.add_data(message_id, text, echo_log_data)
     return text
 
 class MyBot(fp.PoeBot):
