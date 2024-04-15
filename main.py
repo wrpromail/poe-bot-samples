@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import AsyncIterable
 import requests, time, random, string, os, json
-import uvicorn
 
 import fastapi_poe as fp
 import modal
