@@ -7,3 +7,5 @@ langchain
 google-cloud-translate
 google-cloud-vision
 google-cloud-speech
+google-cloud-firestore
+pydub

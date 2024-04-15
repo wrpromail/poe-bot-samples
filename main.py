@@ -12,12 +12,13 @@ from google.oauth2.service_account import Credentials
 
 from llm_service import normal_prompt_process
 from llm_prompts import french_process_prompt
+from utils import requirements_to_list
+from firestore_logging import add_data, echo_log_data
 
 # 项目声明部分
 # todo: 应用名称、依赖等内容需要改为配置化并进行版本管理
 # 将需要的依赖在这里声明，modal 等 serverless 平台为你构建服务需要的运行环境镜像
-REQUIREMENTS = ["fastapi-poe==0.0.36", "PyPDF2==3.0.1", "requests==2.31.0", "langdetect",
-                "langchain-openai", "langchain","google-cloud-translate", "google-cloud-vision", "google-cloud-speech"]
+REQUIREMENTS = requirements_to_list()
 image = Image.from_gcp_artifact_registry("us-west4-docker.pkg.dev/elite-destiny-420014/myreg/serverlessbase:testing",
                                          secret=modal.Secret.from_name("my-googlecloud-secret"), add_python="3.11").pip_install(*REQUIREMENTS)
 #image = Image.debian_slim().pip_install(*REQUIREMENTS)
@@ -61,6 +62,9 @@ def sentence_translate_process(text: str, sa_json: str = GOOGLE_SERVICE_ACCOUNT_
     translation = translate_client.translate(text, target_language="zh-CN")
     return translation["translatedText"]
 
+async def echo_response(message_id: str, text: str):
+    await add_data(message_id, text, echo_log_data)
+    return text
 
 class MyBot(fp.PoeBot):
     async def get_response(
@@ -87,11 +91,14 @@ class MyBot(fp.PoeBot):
             return
         lang = detect(last_message)
         if lang == "fr":
+            # 调用 llm 对法语进行处理
             yield fp.PartialResponse(text=normal_prompt_process(last_message, french_process_prompt))
         if lang in LANGDETECT_SUPPORT:
+            # 调用 google translate 对符合要求的类型语言进行翻译
             yield fp.PartialResponse(text=sentence_translate_process(last_message))
         else:
-            yield fp.PartialResponse(text=last_message)
+            # 其他文本输入，直接返回
+            yield fp.PartialResponse(text=echo_log_data(last_query.message_id, last_message))
     
     async def get_settings(self, setting: fp.SettingsRequest) -> fp.SettingsResponse:
         return fp.SettingsResponse(allow_attachments=True)

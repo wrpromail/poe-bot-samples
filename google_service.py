@@ -12,7 +12,6 @@ def detech_image_annotations(vison_client, image_url):
             return True
         except:
             return False
-
     response = requests.get(image_url)
     if response.status_code != 200:
         return False, []
