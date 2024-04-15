@@ -7,10 +7,11 @@ import modal
 from modal import asgi_app
 from langdetect import detect
 from modal import Image, Stub, Volume
-from langchain.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
 from google.cloud import translate_v2 as translate
 from google.oauth2.service_account import Credentials
+
+from llm_service import normal_prompt_process
+from llm_prompts import french_process_prompt
 
 # 项目声明部分
 # todo: 应用名称、依赖等内容需要改为配置化并进行版本管理
@@ -52,21 +53,6 @@ def process_plain_text_file(url: str):
 def process_pdf_file(url: str):
     return "to be implemented"
 
-# 文本输入处理逻辑
-# 调用 llm 对于法语句子产生特定的处理
-french_process_prompt = """
-请使用中文逐字逐词给我讲解下面的法语内容，如果有重要的语法点或惯用语也请说明，最后仿造两个类似的法语句子。{french_sentence}"""
-
-def french_sentence_process(raw: str):
-    llm = ChatOpenAI(temperature=0.2)
-    prompt = ChatPromptTemplate.from_messages([
-        ("system","You are french language teacher."),
-        ("user", "{input}")
-    ])
-    chain = prompt | llm
-    response = chain.invoke({"input":french_process_prompt.format(french_sentence=raw)})
-    return response.content
-
 # 调用 google translate 对于英文句子产生特定的处理
 def sentence_translate_process(text: str, sa_json: str = GOOGLE_SERVICE_ACCOUNT_JSON_ENV):
     service_account_info = json.loads(os.environ[sa_json])
@@ -82,6 +68,7 @@ class MyBot(fp.PoeBot):
     ) -> AsyncIterable[fp.PartialResponse]:
         # request.query 是一个数组，允许获取用户输入的上下文
         last_query = request.query[-1]
+        
         # 处理用户的附件输入
         if len(last_query.attachments) > 0:
             for attachment in last_query.attachments:
@@ -100,7 +87,7 @@ class MyBot(fp.PoeBot):
             return
         lang = detect(last_message)
         if lang == "fr":
-            yield fp.PartialResponse(text=french_sentence_process(last_message))
+            yield fp.PartialResponse(text=normal_prompt_process(last_message, french_process_prompt))
         if lang in LANGDETECT_SUPPORT:
             yield fp.PartialResponse(text=sentence_translate_process(last_message))
         else:
