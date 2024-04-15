@@ -17,7 +17,9 @@ from google.oauth2.service_account import Credentials
 # 将需要的依赖在这里声明，modal 等 serverless 平台为你构建服务需要的运行环境镜像
 REQUIREMENTS = ["fastapi-poe==0.0.36", "PyPDF2==3.0.1", "requests==2.31.0", "langdetect",
                 "langchain-openai", "langchain","google-cloud-translate", "google-cloud-vision", "google-cloud-speech"]
-image = Image.debian_slim().pip_install(*REQUIREMENTS)
+image = Image.from_gcp_artifact_registry("us-west4-docker.pkg.dev/elite-destiny-420014/myreg/serverlessbase:testing",
+                                         secret=modal.Secret.from_name("my-googlecloud-secret"), add_python="3.11").pip_install(*REQUIREMENTS)
+#image = Image.debian_slim().pip_install(*REQUIREMENTS)
 # 这里是对 app 的命名， modal 上的监控面板通过该名称区分不同的API服务
 stub = Stub("filebot-poe2")
 # 声明需要使用的 volume 名称

@@ -1,0 +1,2 @@
+# 下发 cloud build 构建任务
+gcloud builds submit --config base_image_cloud_build.yaml --region=us-west2

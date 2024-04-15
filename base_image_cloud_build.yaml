@@ -1,0 +1,7 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-west4-docker.pkg.dev/elite-destiny-420014/myreg/serverlessbase:${COMMIT_SHA}', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-west4-docker.pkg.dev/elite-destiny-420014/myreg/serverlessbase:${COMMIT_SHA}']
+images:
+  - 'us-west4-docker.pkg.dev/elite-destiny-420014/myreg/serverlessbase:${COMMIT_SHA}'
