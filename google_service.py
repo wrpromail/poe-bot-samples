@@ -48,7 +48,7 @@ def speech_to_text(source_type: int, source: str, target_language: str = 'zh-CN'
 
 # GCP speech to text api 响应速度偏慢，1分钟语音识别需要50+秒
 def speech_to_text_by_http(source_type: int, source: str, api_key: str, target_language: str = 'zh-CN'):
-    url = 'https://speech.googleapis.com/v1/speech:recognize?key=' + API_KEY
+    url = 'https://speech.googleapis.com/v1/speech:recognize?key=' + api_key
     if source_type == 0:
         with open(source, 'rb') as audio_file:
             audio_data = audio_file.read()
