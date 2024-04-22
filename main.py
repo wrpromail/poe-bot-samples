@@ -83,26 +83,29 @@ class MyBot(fp.PoeBot):
         # 处理用户的附件输入
         if len(last_query.attachments) > 0:
             for attachment in last_query.attachments:
-                if attachment.content_type == 'text/plain':
-                    yield fp.PartialResponse(text=process_plain_text_file(attachment.url))
-                    continue
-                if attachment.content_type == 'application/pdf':
-                    yield fp.PartialResponse(text=process_pdf_file(attachment.url))
-                    continue
-                else:
-                    yield fp.PartialResponse(text=f"Attachment type: {attachment.content_type} is not supported right now")
+                match attachment.content_type:
+                    case "text/plain":
+                        yield fp.PartialResponse(text=process_plain_text_file(attachment.url))
+                        continue
+                    case "application/pdf":
+                        yield fp.PartialResponse(text=process_pdf_file(attachment.url))
+                        continue
+                    case _:
+                        yield fp.PartialResponse(text=f"Attachment type: {attachment.content_type} is not supported right now")  
+
         # 处理用户的文本输入
         last_message = last_query.content
         if last_message is None or last_message == "":
             yield fp.PartialResponse(text="\nNo message to process")
             return
         lang = detect(last_message)
-        if lang == "fr":
-            yield fp.PartialResponse(text=french_sentence_process(last_message))
-        if lang in LANGDETECT_SUPPORT:
-            yield fp.PartialResponse(text=sentence_translate_process(last_message))
-        else:
-            yield fp.PartialResponse(text=last_message)
+        match lang:
+            case "fr":
+                yield fp.PartialResponse(text=french_sentence_process(last_message))
+            case lang if lang in LANGDETECT_SUPPORT:
+                yield fp.PartialResponse(text=sentence_translate_process(last_message))
+            case _:
+                yield fp.PartialResponse(text=last_message)
     
     async def get_settings(self, setting: fp.SettingsRequest) -> fp.SettingsResponse:
         return fp.SettingsResponse(allow_attachments=True)
